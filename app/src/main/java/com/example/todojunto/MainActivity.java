@@ -43,7 +43,6 @@ import java.util.Date;
 public class MainActivity extends AppCompatActivity implements SensorEventListener, LocationListener {
 
     Button btnGuardarExcel;
-    static final int REQUES_IMAGE_CAPTURE = 1;
     private CameraPreview mPreview;
     String currentPhotoPath;
     private Camera mCamera;
