@@ -40,6 +40,9 @@ import java.io.Writer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import static android.Manifest.permission.CAMERA;
+import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
+
 public class MainActivity extends AppCompatActivity implements SensorEventListener, LocationListener {
 
     Button btnGuardarExcel;
@@ -78,18 +81,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // solicitar permisos para utilizar la camara
-        requestPermissions(new String[]{ Manifest.permission.CAMERA }, 1);
-        requestPermissions(new String[]{ Manifest.permission.WRITE_EXTERNAL_STORAGE},1);
 
-        //genero un instanciado para la camara
-        mCamera = getCameraInstance(2);
-
-
-        //Creo una vista previa y le coloco el contenido de la actividad
-        mPreview = new CameraPreview(this, mCamera);
-        FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
-        preview.addView(mPreview);
 
         btnGuardarExcel = findViewById(R.id.btnGuardarExcel);
         /*texto2 =  findViewById(R.id.texto2);
@@ -140,6 +132,34 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             //
         }
 
+        // solicitar permisos para utilizar la camara
+        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MainActivity.this, CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, CAMERA}, 1000);
+
+
+        }else if (androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA)) {
+            // In an educational UI, explain to the user why your app requires this
+            // permission for a specific feature to behave as expected. In this UI,
+            // include a "cancel" or "no thanks" button that allows the user to
+            // continue using your app without granting the permission.
+            androidx.core.app.ActivityCompat.requestPermissions(this, new String[]{CAMERA,WRITE_EXTERNAL_STORAGE}, 1000);
+
+
+            return;
+        } else {
+                // You can directly ask for the permission.
+                // The registered ActivityResultCallback gets the result of this request.
+            ActivityCompat.requestPermissions(this, new String[]{CAMERA,WRITE_EXTERNAL_STORAGE},
+                    1);
+
+        }
+        /*requestPermissions(new String[]{ Manifest.permission.CAMERA }, 1);
+        requestPermissions(new String[]{ Manifest.permission.WRITE_EXTERNAL_STORAGE},1);*/
+        //genero un instanciado para la camara
+
+
+
+
     }
 
     public void Tomardatos(View view) throws IOException {
@@ -182,6 +202,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     protected void onResume() {
         super.onResume();
+        mCamera = getCameraInstance(0);
+
+
+        //Creo una vista previa y le coloco el contenido de la actividad
+        mPreview = new CameraPreview(this, mCamera);
+        FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
+        preview.addView(mPreview);
+
+
 
         // Get updates from the accelerometer and magnetometer at a constant rate.
         // To make batch operations more efficient and reduce power consumption,
