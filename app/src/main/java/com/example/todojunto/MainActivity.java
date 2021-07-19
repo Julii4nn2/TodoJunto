@@ -10,7 +10,6 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
 import android.location.Criteria;
-import android.location.GpsStatus;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -40,13 +39,9 @@ import java.io.Writer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import static android.Manifest.permission.CAMERA;
-import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
-
 public class MainActivity extends AppCompatActivity implements SensorEventListener, LocationListener {
 
     Button btnGuardarExcel;
-    static final int REQUES_IMAGE_CAPTURE = 1;
     private CameraPreview mPreview;
     String currentPhotoPath;
     private Camera mCamera;
