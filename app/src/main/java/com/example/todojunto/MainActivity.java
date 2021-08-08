@@ -47,6 +47,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private Camera mCamera;
     private SurfaceHolder mHolder;
     int bandera=0;
+    int i=0;
 
     private SensorManager sensorManager;
     private final float[] ac = new float[3];
@@ -55,7 +56,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     TextView texto2, texto3, texto4;
     Writer output;
     double Latitud, Longitud;
-    String timeStamp;
+    String timeStamp,NombreAchivo,NombreCarpeta,NombreDirectorio;
     double Boton1, Boton2;
     int N_dataset = 0;    // Sera para que cada mil datos imprimamos textoAsalvar en el TXT
 
@@ -133,10 +134,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         Boton2 = 0;
         bandera=1;
         mCamera.takePicture(null,null, mPicture);
-        //String NombreAchivo = new String("Datos_" + i + ".txt");
-        File file = new File(getExternalFilesDir(null), "DATOS.txt");
+        NombreAchivo = new String("Datos_" + i + ".txt");
+        File file = new File(getExternalFilesDir(null), NombreAchivo);
         FileOutputStream outputStream;
-        textoASalvar ="Timestamp, ax, ay, az, gx, gy, gz, Latitud, Longitud  \n";
+        textoASalvar ="Timestamp; ax; ay; az; gx; gy; gz; Latitud; Longitud  \n";
         outputStream = new FileOutputStream(file);
         outputStream.write(textoASalvar.getBytes());
         outputStream.close();
@@ -154,6 +155,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         //texto3.setText("");
         //texto3.append("Se finalizo la toma de datos" + "\n" + new SimpleDateFormat("dd/MM/yyyy_HH:mm:ss.SSSSSSS").format(new Date()) + "\n" + "La cantidad de datos son:" + N_dataset);
         Toast.makeText(getApplicationContext(), "FIN DE TOMA DE DATOS"+"\n" + "La cantidad de datos son:" + N_dataset, Toast.LENGTH_LONG).show();
+        i=i+1;
 
     }
 
@@ -168,23 +170,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     protected void onResume() {
         super.onResume();
 
-
-        // Get updates from the accelerometer and magnetometer at a constant rate.
-        // To make batch operations more efficient and reduce power consumption,
-        // provide support for delaying updates to the application.
-        //
-        // In this example, the sensor reporting delay is small enough such that
-        // the application receives an update before the system checks the sensor
-        // readings again.
+        // Obtenemos una actualizaciones del acelerometro, gyroscopo y GPSa una taza constante
+        // Para hacer que las operaciones sean más eficientes y reducir el consumo de energía.
         Sensor accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         if (accelerometer != null) {
             sensorManager.registerListener(this, accelerometer,
-                    SensorManager.SENSOR_DELAY_NORMAL);
+                    SensorManager.SENSOR_DELAY_GAME);
         }
         Sensor gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         if (gyroscope != null) {
             sensorManager.registerListener(this, gyroscope,
-                    SensorManager.SENSOR_DELAY_NORMAL);
+                    SensorManager.SENSOR_DELAY_GAME);
         }
         //GPS
         if (ContextCompat.checkSelfPermission(
@@ -205,6 +201,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                     1);
         }
+
         super.onResume();
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_TIEMPO_ENTRE_UPDATES, MIN_CAMBIO_DISTANCIA_PARA_UPDATES, this);
 
@@ -231,8 +228,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         0, ac.length);
                 // Aca directamente lo guardo
                 timeStamp = new SimpleDateFormat("dd/MM/yyyy_HH:mm:ss.SSSSSSS").format(new Date());
-                textoASalvar = timeStamp + "," + ac[0] + "," + ac[1] + "," + ac[2] + "," + " " + "," + " " + "," + " " + ","
-                        + " "+ "," + " " + "," + "\n";
+                textoASalvar = timeStamp + ";" + ac[0] + ";" + ac[1] + ";" + ac[2] +  ";" + null + ";"+ null + ";" + null + ";"
+                        + null + ";" + null + ";" + "\n";
                 ImprimoDatos();
 
             }
@@ -240,16 +237,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 System.arraycopy(sensorEvent.values, 0, gy,
                         0, gy.length);
                 timeStamp = new SimpleDateFormat("dd/MM/yyyy_HH:mm:ss.SSSSSSS").format(new Date());
-                textoASalvar = timeStamp + "," + "" + "," + " " + "," + " " + "," + gy[0] + "," + gy[1] + "," + gy[2] + ","
-                        + " "+ ", " + " " + ", " + "\n";
+                textoASalvar = timeStamp + ";" + null + ";"+ null + ";" + null + ";" + gy[0] + ";"+ gy[1] + ";" + gy[2] + ";"
+                        + null + ";" + null + ";" + "\n";
                 ImprimoDatos();
             }
         }
     }
 
     public void ImprimoDatos() {
-        //String NombreAchivo = new String("Datos_" + i + ".txt");
-        File file = new File(getExternalFilesDir(null), "DATOS.txt");
+        File file = new File(getExternalFilesDir(null), NombreAchivo);
         //Creo un flujo de salida para poder escribir datos en el file:
         FileOutputStream outputStream = null;
         try {
@@ -285,8 +281,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         Longitud = (double) (location.getLongitude());
         if (Boton1 == 1 && Boton2 == 0) {
             timeStamp = new SimpleDateFormat("dd/MM/yyyy_HH:mm:ss.SSSSSSS").format(new Date());
-            textoASalvar = timeStamp + ", " + " " + ", " + " " + ", " + " " + ", " + " " + ", " + " " + ", " + "" + ", "
-                    + Latitud + ", " + Longitud  + "\n";
+            textoASalvar = timeStamp + ";" + null + ";"+ null + ";" + null + ";" + null + ";"+ null + ";" + null + ";"
+                    + Latitud + "; " + Longitud  + "\n";
             ImprimoDatos();
         }
 
@@ -378,20 +374,22 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         @Override
         public void onPictureTaken(byte[] data, Camera camera) {
+            NombreCarpeta = new String("Carpetas" + i );
 
-            File pictureFile = null;
+
+            File NombreCarpeta = null;
             try{
-                pictureFile = crearImagen();
+                NombreCarpeta = crearImagen();
             }catch (IOException e){
 
             }
-            if (pictureFile == null){
+            if (NombreCarpeta == null){
 //                Log.d(TAG, "Error creating media file, check storage permissions");
                 return;
             }
 
             try {
-                FileOutputStream fos = new FileOutputStream(pictureFile);
+                FileOutputStream fos = new FileOutputStream(NombreCarpeta);
                 fos.write(data);
                 fos.close();
                 mCamera.startPreview();
@@ -408,13 +406,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     };
 
     private File crearImagen() throws IOException {
-        String timeStamp = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss-ms").format(new Date());
-        String nombreImagen = "foto"+timeStamp+"_";
-        File directorio = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
-        File imagen = File.createTempFile(nombreImagen , ".jpg",directorio);
 
-        currentPhotoPath = imagen.getAbsolutePath();
-        return imagen;
+            String timeStamp = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss-ms").format(new Date());
+            String nombreImagen = "foto" + timeStamp + "_";
+            File directorio = getExternalFilesDir(Environment.DIRECTORY_PICTURES + i);
+            File imagen = File.createTempFile(nombreImagen, ".jpg", directorio);
+
+            currentPhotoPath = imagen.getAbsolutePath();
+            return imagen;
+
+
     }
     // FIN DEL DESARROLLO DE LA CAMARA MANUAL
 
