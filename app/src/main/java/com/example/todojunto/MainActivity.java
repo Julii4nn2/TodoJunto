@@ -135,7 +135,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         bandera=1;
         mCamera.takePicture(null,null, mPicture);
         timeStamp_carpeta= new SimpleDateFormat("dd_MM_yyyy_HH:mm:ss.SSSSSSS").format(new Date());
-        NombreAchivo = new String("Datos_" + i + ".txt");
+        NombreAchivo = new String("Datos_" + timeStamp_carpeta+ ".txt");
         File file = new File(getExternalFilesDir(null), NombreAchivo);
         FileOutputStream outputStream;
         textoASalvar ="Timestamp; ax; ay; az; gx; gy; gz; Latitud; Longitud  \n";
@@ -411,7 +411,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             String timeStamp = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss-ms").format(new Date());
             String nombreImagen = "foto" + timeStamp + "_";
 
-            File directorio = getExternalFilesDir(Environment.DIRECTORY_PICTURES + timeStamp_carpeta);
+            File directorio = getExternalFilesDir(Environment.DIRECTORY_PICTURES +'_'+ timeStamp_carpeta);
             File imagen = File.createTempFile(nombreImagen, ".jpg", directorio);
 
             currentPhotoPath = imagen.getAbsolutePath();
