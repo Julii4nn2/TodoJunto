@@ -56,7 +56,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     TextView texto2, texto3, texto4;
     Writer output;
     double Latitud, Longitud;
-    String timeStamp,NombreAchivo,NombreCarpeta,NombreDirectorio;
+    String timeStamp,NombreAchivo,NombreCarpeta,timeStamp_carpeta;
     double Boton1, Boton2;
     int N_dataset = 0;    // Sera para que cada mil datos imprimamos textoAsalvar en el TXT
 
@@ -134,6 +134,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         Boton2 = 0;
         bandera=1;
         mCamera.takePicture(null,null, mPicture);
+        timeStamp_carpeta= new SimpleDateFormat("dd_MM_yyyy_HH:mm:ss.SSSSSSS").format(new Date());
         NombreAchivo = new String("Datos_" + i + ".txt");
         File file = new File(getExternalFilesDir(null), NombreAchivo);
         FileOutputStream outputStream;
@@ -409,7 +410,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
             String timeStamp = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss-ms").format(new Date());
             String nombreImagen = "foto" + timeStamp + "_";
-            File directorio = getExternalFilesDir(Environment.DIRECTORY_PICTURES + i);
+
+            File directorio = getExternalFilesDir(Environment.DIRECTORY_PICTURES + timeStamp_carpeta);
             File imagen = File.createTempFile(nombreImagen, ".jpg", directorio);
 
             currentPhotoPath = imagen.getAbsolutePath();
