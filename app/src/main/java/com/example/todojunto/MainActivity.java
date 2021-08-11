@@ -134,7 +134,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         Boton2 = 0;
         bandera=1;
         mCamera.takePicture(null,null, mPicture);
-        timeStamp_carpeta= new SimpleDateFormat("dd_MM_yyyy_HH:mm:ss.SSSSSSS").format(new Date());
+        timeStamp_carpeta= new SimpleDateFormat("dd_MM_yyyy_HH_mm_ss").format(new Date());
         NombreAchivo = new String("Datos_" + timeStamp_carpeta+ ".txt");
         File file = new File(getExternalFilesDir(null), NombreAchivo);
         FileOutputStream outputStream;
