@@ -1,33 +1,40 @@
 package com.example.todojunto;
 
+import android.Manifest;
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.hardware.Camera;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.hardware.camera2.CameraCaptureSession;
+import android.hardware.camera2.CameraDevice;
+import android.hardware.camera2.CaptureRequest;
+import android.location.Criteria;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.media.ImageReader;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.Environment;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.util.Size;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
+import android.view.View;
+import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-
-import android.Manifest;
-import android.content.pm.PackageManager;
-import android.hardware.Camera;
-import android.location.Criteria;
-import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
-import android.os.Build;
-import android.os.Bundle;
-import android.os.Environment;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
-import android.view.View;
-import android.content.Context;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
-import android.widget.Button;
-import android.widget.FrameLayout;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -44,10 +51,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     Button btnGuardarExcel;
     private CameraPreview mPreview;
     String currentPhotoPath;
-    private Camera mCamera;
-    private SurfaceHolder mHolder;
     int bandera=0;
     int i=0;
+    private Camera.Parameters CameraParameters;
+
+    //Desarrollo camera2 API
+    private CameraDevice mCamera;
+    //private SurfaceHolder mHolder;
+    private String cameraId;
+    CameraCaptureSession cameraCaptureSession;
+    CaptureRequest captureRequest;
+    CaptureRequest.Builder captureRequestBuilder;
+
+    private Size imageDimensions;
+    private ImageReader imageReader;
+    private File file;
+    Handler mBackgroundHandler;
+    HandlerThread mBackgroundThread;
+    //fin declaracion de variables camera2 API
+
 
     private SensorManager sensorManager;
     private final float[] ac = new float[3];
@@ -127,6 +149,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
 
     }
+
 
     public void Tomardatos(View view) throws IOException {
 
@@ -291,10 +314,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     // Se comienza el desarrollo pra el objeto camara y manejarlo de manera manual
 // se consigue un instanciado de camra
-    public Camera getCameraInstance(int cameraselection){
-        Camera c = null;
+    public CameraDevice getCameraInstance(int cameraselection){
+        CameraDevice c = null;
         try {
-            c = Camera.open(cameraselection); // attempt to get a Camera instance
+            c = CameraDevice.; // attempt to get a Camera instance
         }
         catch (Exception e){
             Toast.makeText(this, "La camara no esta disponible",Toast.LENGTH_LONG).show();
