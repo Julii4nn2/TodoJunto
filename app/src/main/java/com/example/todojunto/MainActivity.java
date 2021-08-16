@@ -55,7 +55,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     int i=0;
     private Camera.Parameters CameraParameters;
 
-    //Desarrollo camera2 API
+    //Desarrollo camera2 API css
     private CameraDevice mCamera;
     //private SurfaceHolder mHolder;
     private String cameraId;
