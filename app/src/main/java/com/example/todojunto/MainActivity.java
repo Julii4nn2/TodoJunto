@@ -49,6 +49,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     int bandera=0;
     int i=0;
 
+
     private SensorManager sensorManager;
     private final float[] ac = new float[3];
     private final float[] gy = new float[3];
