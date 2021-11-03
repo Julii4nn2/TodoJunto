@@ -1,5 +1,8 @@
 package com.example.todojunto;
 
+import static android.content.ContentValues.TAG;
+import static android.hardware.camera2.CameraCharacteristics.*;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
@@ -8,16 +11,35 @@ import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.graphics.ImageFormat;
+import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCaptureSession;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraDevice;
+import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CameraMetadata;
+import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.TotalCaptureResult;
+import android.hardware.camera2.params.StreamConfigurationMap;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.media.Image;
+import android.media.ImageReader;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.util.Log;
+import android.util.Size;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.TextureView;
 import android.view.View;
 import android.content.Context;
 import android.hardware.Sensor;
@@ -35,16 +57,22 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.Writer;
+import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
+@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class MainActivity extends AppCompatActivity implements SensorEventListener, LocationListener {
 
     Button btnGuardarExcel;
-    private CameraPreview mPreview;
+    //private CameraPreview mPreview;
     String currentPhotoPath;
-    private Camera mCamera;
+    //private Camera mCamera;
     private SurfaceHolder mHolder;
     int bandera=0;
     int i=0;
@@ -60,6 +88,23 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     String timeStamp,NombreAchivo,NombreCarpeta,timeStamp_carpeta;
     double Boton1, Boton2;
     int N_dataset = 0;    // Sera para que cada mil datos imprimamos textoAsalvar en el TXT
+
+    //INICIO DESARROLLO CAMERA 2 API
+
+    private TextureView textureView;
+
+    private String cameraId;
+    protected CameraDevice mCamera;
+    protected CameraCaptureSession cameraCaptureSessions;
+    protected CaptureRequest captureRequest;
+    protected CaptureRequest.Builder captureRequestBuilder;
+    private Size imageDimension;
+    private ImageReader imageReader;
+    private File file;
+    private static final int REQUEST_CAMERA_PERMISSION = 200;
+    private boolean mFlashSupported;
+    private Handler mBackgroundHandler;
+    private HandlerThread mBackgroundThread;
 
 
     String textoASalvar;
@@ -77,9 +122,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-
-
+        textureView = (TextureView) findViewById(R.id.camera_preview);
+        assert textureView != null;
+        textureView.setSurfaceTextureListener(textureListener);
         btnGuardarExcel = findViewById(R.id.btnGuardarExcel);
         /*texto2 =  findViewById(R.id.texto2);
         texto3 =  findViewById(R.id.texto3);
@@ -113,8 +158,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         } else {
             //
         }
-
-        //genero un instanciado para la camara
+        // Instanciado y cosas de la API CAMERA
+        /*//genero un instanciado para la camara
         mCamera = getCameraInstance(0);
 
 
@@ -122,19 +167,18 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mPreview = new CameraPreview(this, mCamera);
         FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
         preview.addView(mPreview);
-
-
-
-
-
+*/
+        // FIN DE RECURSOS API CAMERA
     }
+
+
 
     public void Tomardatos(View view) throws IOException {
 
         Boton1 = 1;
         Boton2 = 0;
         bandera=1;
-        mCamera.takePicture(null,null, mPicture);
+        takePicture();
         timeStamp_carpeta= new SimpleDateFormat("dd_MM_yyyy_HH_mm_ss").format(new Date());
         NombreAchivo = new String("Datos_" + timeStamp_carpeta+ ".txt");
         File file = new File(getExternalFilesDir(null), NombreAchivo);
@@ -207,8 +251,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         super.onResume();
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_TIEMPO_ENTRE_UPDATES, MIN_CAMBIO_DISTANCIA_PARA_UPDATES, this);
 
-
+        super.onResume();
+        Log.e(TAG, "onResume");
+        startBackgroundThread();
+        if (textureView.isAvailable()) {
+            openCamera();
+        } else {
+            textureView.setSurfaceTextureListener(textureListener);
+        }
     }
+
 
     @Override
     protected void onPause() {
@@ -216,6 +268,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         sensorManager.unregisterListener(this);
         locationManager.removeUpdates(this);
+
+        Log.e(TAG, "onPause");
+        //closeCamera();
+        stopBackgroundThread();
+        super.onPause();
 
     }
 
@@ -290,7 +347,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     }
 
-    // Se comienza el desarrollo pra el objeto camara y manejarlo de manera manual
+    // CAMERA2 API INI
+
+    // CAMERA2 API FIN
+
+//CAMERA API INI
+    /*// Se comienza el desarrollo pra el objeto camara y manejarlo de manera manual
 // se consigue un instanciado de camra
     public Camera getCameraInstance(int cameraselection){
         Camera c = null;
@@ -420,7 +482,264 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
 
     }
-    // FIN DEL DESARROLLO DE LA CAMARA MANUAL
+    // FIN DEL DESARROLLO DE LA CAMARA MANUAL*/
+//CAMERA API FIN
+
+
+
+
+
+    //INICIO DESARROLLO CAMERA2 API
+
+
+
+
+    // INICIALIZO EL TEXTURE LISTENER
+
+    TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
+        @Override
+        public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surfaceTexture, int i, int i1) {
+            // Se abre la camara
+            openCamera();
+        }
+
+        @Override
+        public void onSurfaceTextureSizeChanged(@NonNull SurfaceTexture surface, int width, int height) {
+            //Aqui se transforma el tamaño de captura de imagen de acuerdo con ancho y alto
+
+        }
+
+        @Override
+        public boolean onSurfaceTextureDestroyed(@NonNull SurfaceTexture surfaceTexture) {
+            return false;
+        }
+
+        @Override
+        public void onSurfaceTextureUpdated(@NonNull SurfaceTexture surfaceTexture) {
+
+        }
+    };
+
+    private final CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
+        @Override
+        public void onOpened(@NonNull CameraDevice camera) {
+            // Esta sentencia es ejecutada cuando se abre la camara
+
+            Log.e(TAG, "onOpened");
+            mCamera = camera;
+            createCameraPreview();
+        }
+
+        @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+        @Override
+        public void onDisconnected(@NonNull CameraDevice camera) {
+            mCamera.close();
+        }
+
+        @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+        @Override
+        public void onError(@NonNull CameraDevice camera, int i) {
+            mCamera.close();
+            mCamera = null;
+        }
+    };
+
+    final CameraCaptureSession.CaptureCallback captureCallbackListener = new CameraCaptureSession.CaptureCallback() {
+        @Override
+        public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
+            super.onCaptureCompleted(session, request, result);
+            Toast.makeText(MainActivity.this, "Saved:" + file, Toast.LENGTH_SHORT).show();
+            createCameraPreview();
+        }
+    };
+
+    protected void startBackgroundThread() {
+        mBackgroundThread = new HandlerThread("Camera Background");
+        mBackgroundThread.start();
+        mBackgroundHandler = new Handler(mBackgroundThread.getLooper());
+    }
+
+    protected void stopBackgroundThread() {
+        mBackgroundThread.quitSafely();
+        try {
+            mBackgroundThread.join();
+            mBackgroundThread = null;
+            mBackgroundHandler = null;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+// INICIO METODO PARA TOMAR FOTOS
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    protected void takePicture() {
+        if (null == mCamera) {
+            Log.e(TAG, "cameraDevice is null");
+            return;
+        }
+        CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+        try {
+            CameraCharacteristics characteristics = manager.getCameraCharacteristics(mCamera.getId());
+            android.util.Size[] jpegSizes = null;
+            if (characteristics != null) {
+                jpegSizes = characteristics.get(SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(ImageFormat.JPEG);
+            }
+            int width = 640;
+            int height = 480;
+            if (jpegSizes != null && 0 < jpegSizes.length) {
+                width = jpegSizes[0].getWidth();
+                height = jpegSizes[0].getHeight();
+            }
+            ImageReader reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 1);
+            List<Surface> outputSurfaces = new ArrayList<Surface>(2);
+            outputSurfaces.add(reader.getSurface());
+            outputSurfaces.add(new Surface(textureView.getSurfaceTexture()));
+            final CaptureRequest.Builder captureBuilder = mCamera.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
+            captureBuilder.addTarget(reader.getSurface());
+            captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+            // Orientation
+            int rotation = getWindowManager().getDefaultDisplay().getRotation();
+            //captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
+            final File file = new File(Environment.getExternalStorageDirectory() + "/pic.jpg");
+            ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
+                @Override
+                public void onImageAvailable(ImageReader reader) {
+                    Image image = null;
+                    try {
+                        image = reader.acquireLatestImage();
+                        ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+                        byte[] bytes = new byte[buffer.capacity()];
+                        buffer.get(bytes);
+                        save(bytes);
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } finally {
+                        if (image != null) {
+                            image.close();
+                        }
+                    }
+                }
+
+                private void save(byte[] bytes) throws IOException {
+                    OutputStream output = null;
+                    try {
+                        output = new FileOutputStream(file);
+                        output.write(bytes);
+                    } finally {
+                        if (null != output) {
+                            output.close();
+                        }
+                    }
+                }
+            };
+            reader.setOnImageAvailableListener(readerListener, mBackgroundHandler);
+            final CameraCaptureSession.CaptureCallback captureListener = new CameraCaptureSession.CaptureCallback() {
+                @Override
+                public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
+                    super.onCaptureCompleted(session, request, result);
+                    Toast.makeText(MainActivity.this, "Saved:" + file, Toast.LENGTH_SHORT).show();
+                    createCameraPreview();
+                }
+            };
+            mCamera.createCaptureSession(outputSurfaces, new CameraCaptureSession.StateCallback() {
+                @Override
+                public void onConfigured(@NonNull CameraCaptureSession session) {
+                    try {
+                        session.capture(captureBuilder.build(), captureListener, mBackgroundHandler);
+                    } catch (CameraAccessException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                @Override
+                public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
+                }
+            }, mBackgroundHandler);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // FIN METODO PARA TOMAR FOTOS
+
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    protected void createCameraPreview() {
+        try {
+            SurfaceTexture texture = textureView.getSurfaceTexture();
+            assert texture != null;
+            //texture.setDefaultBufferSize(imageDimension.min(), imageDimension.max());
+            Surface surface = new Surface(texture);
+            captureRequestBuilder = mCamera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+            captureRequestBuilder.addTarget(surface);
+            mCamera.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
+                @Override
+                public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {//The camera is already closed
+                    if (null == mCamera) {
+                        return;
+                    }
+                    // When the session is ready, we start displaying the preview.
+                    cameraCaptureSessions = cameraCaptureSession;
+                    updatePreview();
+                }
+
+                @Override
+                public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
+                    Toast.makeText(MainActivity.this, "Configuration change", Toast.LENGTH_SHORT).show();
+                }
+            }, null);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    private void openCamera() {
+        CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+        Log.e(TAG, "is camera open");
+        try {
+            cameraId = manager.getCameraIdList()[0];
+            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
+            StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+            assert map != null;
+            imageDimension = map.getOutputSizes(SurfaceTexture.class)[0];
+            // Add permission for camera and let user grant the permission
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CAMERA_PERMISSION);
+                return;
+            }
+            manager.openCamera(cameraId, stateCallback, null);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+        Log.e(TAG, "openCamera X");
+    }
+
+    protected void updatePreview() {
+        if (null == mCamera) {
+            Log.e(TAG, "updatePreview error, return");
+        }
+        captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+        try {
+            cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(), null, mBackgroundHandler);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void closeCamera() {
+        if (null != mCamera) {
+            mCamera.close();
+            mCamera = null;
+        }
+        if (null != imageReader) {
+            imageReader.close();
+            imageReader = null;
+        }
+    }
+
+    // FIN DESARROLLO CAMERA2 API
 
 }
 
