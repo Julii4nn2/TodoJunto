@@ -172,7 +172,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
 
-
     public void Tomardatos(View view) throws IOException {
 
         Boton1 = 1;
@@ -553,6 +552,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
     };
 
+
     protected void startBackgroundThread() {
         mBackgroundThread = new HandlerThread("Camera Background");
         mBackgroundThread.start();
@@ -661,6 +661,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
     }
 
+
+
     // FIN METODO PARA TOMAR FOTOS
 
 
@@ -740,6 +742,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     // FIN DESARROLLO CAMERA2 API
+
+
 
 }
 
