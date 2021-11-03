@@ -36,6 +36,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
 import android.util.Size;
+import android.util.SparseIntArray;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -93,6 +94,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private TextureView textureView;
 
+    private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
+
+    static {
+        ORIENTATIONS.append(Surface.ROTATION_0, 90);
+        ORIENTATIONS.append(Surface.ROTATION_90, 0);
+        ORIENTATIONS.append(Surface.ROTATION_180, 270);
+        ORIENTATIONS.append(Surface.ROTATION_270, 180);
+    }
+
     private String cameraId;
     protected CameraDevice mCamera;
     protected CameraCaptureSession cameraCaptureSessions;
@@ -135,6 +145,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             @Override
             public void onClick(View view) {
                 guardar();
+                try {
+                    cameraCaptureSessions.stopRepeating();
+                } catch (CameraAccessException e) {
+                    e.printStackTrace();
+                }
                 bandera=0;
             }
         });
@@ -346,9 +361,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     }
 
-    // CAMERA2 API INI
-
-    // CAMERA2 API FIN
 
 //CAMERA API INI
     /*// Se comienza el desarrollo pra el objeto camara y manejarlo de manera manual
@@ -593,12 +605,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             List<Surface> outputSurfaces = new ArrayList<Surface>(2);
             outputSurfaces.add(reader.getSurface());
             outputSurfaces.add(new Surface(textureView.getSurfaceTexture()));
-            final CaptureRequest.Builder captureBuilder = mCamera.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
+            final CaptureRequest.Builder captureBuilder = mCamera.createCaptureRequest(CameraDevice.TEMPLATE_ZERO_SHUTTER_LAG);
             captureBuilder.addTarget(reader.getSurface());
             captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
             // Orientation
             int rotation = getWindowManager().getDefaultDisplay().getRotation();
-            //captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
+            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
             final File file = new File(Environment.getExternalStorageDirectory() + "/pic.jpg");
             ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
                 @Override
@@ -621,15 +633,42 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     }
                 }
 
+                private File crearImagen() throws IOException {
+
+                    String timeStamp = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss-ms").format(new Date());
+                    String nombreImagen = "foto" + timeStamp + "_";
+
+                    File directorio = getExternalFilesDir(Environment.DIRECTORY_PICTURES +'_'+ timeStamp_carpeta);
+                    File imagen = File.createTempFile(nombreImagen, ".jpg", directorio);
+
+                    currentPhotoPath = imagen.getAbsolutePath();
+                    return imagen;
+
+
+                }
+
                 private void save(byte[] bytes) throws IOException {
                     OutputStream output = null;
+                    // GUARDO EN CARPETA CON TIMESTAMP Y FOTO CON TIMESTAMP
+                    File NombreCarpeta = null;
+                    try{
+                        NombreCarpeta = crearImagen();
+                    }catch (IOException e){
+
+                    }
+                    if (NombreCarpeta == null){
+//                Log.d(TAG, "Error creating media file, check storage permissions");
+                        return;
+                    }
+
                     try {
-                        output = new FileOutputStream(file);
-                        output.write(bytes);
-                    } finally {
-                        if (null != output) {
-                            output.close();
-                        }
+                        FileOutputStream fos = new FileOutputStream(NombreCarpeta);
+                        fos.write(bytes);
+                        fos.close();
+                    }catch (FileNotFoundException e){
+//                Log.d(TAG, "File not found: " + e.getMessage());
+                    } catch (IOException e) {
+//                Log.d(TAG, "Error accessing file: " + e.getMessage());
                     }
                 }
             };
@@ -646,6 +685,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 @Override
                 public void onConfigured(@NonNull CameraCaptureSession session) {
                     try {
+                        //session.setRepeatingRequest(captureRequest, captureListener, mBackgroundHandler);
                         session.capture(captureBuilder.build(), captureListener, mBackgroundHandler);
                     } catch (CameraAccessException e) {
                         e.printStackTrace();
