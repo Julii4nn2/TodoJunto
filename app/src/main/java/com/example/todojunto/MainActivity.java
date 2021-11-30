@@ -76,6 +76,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     //private Camera mCamera;
     private SurfaceHolder mHolder;
     int bandera=0;
+    int CAPTURA_COMPLETA = 3;
+    int INICIO_CAPTURA = 2;
     int i=0;
 
 
@@ -193,8 +195,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         Boton1 = 1;
         Boton2 = 0;
         bandera=1;
-        takePicture();
         timeStamp_carpeta= new SimpleDateFormat("dd_MM_yyyy_HH_mm_ss").format(new Date());
+        takePicture();
         NombreAchivo = new String("Datos_" + timeStamp_carpeta+ ".txt");
         File file = new File(getExternalFilesDir(null), NombreAchivo);
         FileOutputStream outputStream;
@@ -233,6 +235,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         // Obtenemos una actualizaciones del acelerometro, gyroscopo y GPSa una taza constante
         // Para hacer que las operaciones sean más eficientes y reducir el consumo de energía.
+
         Sensor accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         if (accelerometer != null) {
             sensorManager.registerListener(this, accelerometer,
@@ -294,6 +297,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
+
+        if (bandera == CAPTURA_COMPLETA){
+            bandera = INICIO_CAPTURA;
+            takePicture();
+        }
 
         if (Boton1 == 1 && Boton2 == 0) {
 
@@ -606,7 +614,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             List<Surface> outputSurfaces = new ArrayList<Surface>(2);
             outputSurfaces.add(reader.getSurface());
             outputSurfaces.add(new Surface(textureView.getSurfaceTexture()));
-            final CaptureRequest.Builder captureBuilder = mCamera.createCaptureRequest(CameraDevice.TEMPLATE_ZERO_SHUTTER_LAG);
+            final CaptureRequest.Builder captureBuilder = mCamera.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
             captureBuilder.addTarget(reader.getSurface());
             captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
             // Orientation
@@ -639,7 +647,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     String timeStamp = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss-ms").format(new Date());
                     String nombreImagen = "foto" + timeStamp + "_";
 
-                    File directorio = getExternalFilesDir(Environment.DIRECTORY_PICTURES +'_'+ timeStamp_carpeta);
+                    File directorio = getExternalFilesDir(Environment.DIRECTORY_PICTURES +'_'+ timeStamp_carpeta);//'1');
                     File imagen = File.createTempFile(nombreImagen, ".jpg", directorio);
 
                     currentPhotoPath = imagen.getAbsolutePath();
@@ -680,14 +688,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     super.onCaptureCompleted(session, request, result);
                     Toast.makeText(MainActivity.this, "Saved:" + file, Toast.LENGTH_SHORT).show();
                     createCameraPreview();
+                    bandera = CAPTURA_COMPLETA;
                 }
             };
             mCamera.createCaptureSession(outputSurfaces, new CameraCaptureSession.StateCallback() {
                 @Override
                 public void onConfigured(@NonNull CameraCaptureSession session) {
                     try {
-                        //session.setRepeatingRequest(captureRequest, captureListener, mBackgroundHandler);
                         session.capture(captureBuilder.build(), captureListener, mBackgroundHandler);
+//                        session.setRepeatingRequest(captureBuilder.build(), captureListener, mBackgroundHandler);
                     } catch (CameraAccessException e) {
                         e.printStackTrace();
                     }
