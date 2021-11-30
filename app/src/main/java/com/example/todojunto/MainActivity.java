@@ -150,6 +150,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 } catch (CameraAccessException e) {
                     e.printStackTrace();
                 }
+                createCameraPreview();
                 bandera=0;
             }
         });
